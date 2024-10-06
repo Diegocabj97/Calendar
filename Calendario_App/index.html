@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario con Feriados y Puentes de Argentina</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 5px;
+        }
+        .holiday {
+            background-color: orange;
+        }
+        .bridge {
+            background-color: lightsalmon;
+            font-weight: bold;
+        }
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <input type="number" id="year" placeholder="Año" min="1900" max="2100">
+            <input type="number" id="month" placeholder="Mes" min="1" max="12">
+            <button onclick="updateCalendar()">Actualizar Calendario</button>
+        </div>
+        <div id="calendar"></div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: orange;"></div>
+                <span>Feriado</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: lightsalmon;"></div>
+                <span>Feriado Puente</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        const argentineHolidays = {
+            "1-1": "Año Nuevo",
+            "2-20": "Carnaval",
+            "2-21": "Carnaval",
+            "3-24": "Día Nacional de la Memoria por la Verdad y la Justicia",
+            "4-2": "Día del Veterano y de los Caídos en la Guerra de Malvinas",
+            "4-7": "Viernes Santo",
+            "5-1": "Día del Trabajador",
+            "5-25": "Día de la Revolución de Mayo",
+            "6-17": "Paso a la Inmortalidad del General Martín Miguel de Güemes",
+            "6-20": "Paso a la Inmortalidad del General Manuel Belgrano",
+            "7-9": "Día de la Independencia",
+            "8-17": "Paso a la Inmortalidad del General José de San Martín",
+            "10-12": "Día del Respeto a la Diversidad Cultural",
+            "11-20": "Día de la Soberanía Nacional",
+            "12-8": "Inmaculada Concepción de María",
+            "12-25": "Navidad"
+        };
+
+        const argentineBridges = {
+            "3-27": "Feriado puente turístico",
+            "6-19": "Feriado puente turístico",
+            "10-13": "Feriado puente turístico",
+            "12-9": "Feriado puente turístico"
+        };
+
+        function createCalendarMatrix(year, month) {
+            const firstDay = new Date(year, month - 1, 1);
+            const lastDay = new Date(year, month, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+            
+            let calendar = [];
+            let week = Array(7).fill(0);
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                let dayOfWeek = (startingDay + i - 1) % 7;
+                week[dayOfWeek] = i;
+                
+                if (dayOfWeek === 6 || i === daysInMonth) {
+                    calendar.push(week);
+                    week = Array(7).fill(0);
+                }
+            }
+            
+            return calendar;
+        }
+
+        function isHoliday(year, month, day) {
+            const dateString = `${month}-${day}`;
+            return argentineHolidays.hasOwnProperty(dateString);
+        }
+
+        function isBridge(year, month, day) {
+            const dateString = `${month}-${day}`;
+            return argentineBridges.hasOwnProperty(dateString);
+        }
+
+        function updateCalendar() {
+            const year = parseInt(document.getElementById('year').value);
+            const month = parseInt(document.getElementById('month').value);
+            
+            if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+                alert('Por favor, ingrese un año y mes válidos (1-12)');
+                return;
+            }
+            
+            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            
+            const calendarData = createCalendarMatrix(year, month);
+            const calendarDiv = document.getElementById('calendar');
+            
+            let html = `<h2>${monthNames[month - 1]} ${year}</h2>`;
+            html += '<table><tr><th>Dom</th><th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th><th>Sáb</th></tr>';
+            
+            for (let week of calendarData) {
+                html += '<tr>';
+                for (let day of week) {
+                    const isHolidayDay = day !== 0 && isHoliday(year, month, day);
+                    const isBridgeDay = day !== 0 && isBridge(year, month, day);
+                    let cellClass = '';
+                    let cellTitle = '';
+                    
+                    if (isHolidayDay) {
+                        cellClass = ' class="holiday"';
+                        cellTitle = ` title="${argentineHolidays[`${month}-${day}`]}"`;
+                    } else if (isBridgeDay) {
+                        cellClass = ' class="bridge"';
+                        cellTitle = ` title="${argentineBridges[`${month}-${day}`]}"`;
+                    }
+                    
+                    html += `<td${cellClass}${cellTitle}>${day ? day : ''}</td>`;
+                }
+                html += '</tr>';
+            }
+            
+            html += '</table>';
+            calendarDiv.innerHTML = html;
+        }
+
+        // Inicializar el calendario con el año y mes actual
+        window.onload = function() {
+            const currentDate = new Date();
+            document.getElementById('year').value = currentDate.getFullYear();
+            document.getElementById('month').value = currentDate.getMonth() + 1;
+            updateCalendar();
+        }
+    </script>
+</body>
+</html>
